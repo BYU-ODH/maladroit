@@ -1,0 +1,95 @@
+body {
+  background-color: #F9FCFE;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+div.navbar, nav.navbar {
+  background-image: none;
+  background-color: #002255;
+  background: linear-gradient(#002255, #114477);
+}
+
+.navbar-inverse .navbar-nav > .active > a {
+  background-image: none;
+  background-color: #002255;
+  background: linear-gradient(#002255, #114477);
+}
+
+.navbar-inverse .navbar-nav > .active > a:hover {
+  background-image: none;
+  background-color: #002255;
+  background: linear-gradient(#002255, #114477);
+}
+
+.jumbotron {
+  background-color: #002255;
+  background: linear-gradient(#114477, #336699);
+  color: #F9FCFE;
+}
+
+div.doc {
+  display: inline-block;
+  margin: 3px;
+}
+
+.fileUpload {
+  position: relative;
+  overflow: hidden;
+  margin: 10px;
+}
+
+.fileUpload input.upload {
+  font-size: 20px;
+  top: 0;
+  cursor: pointer;
+  filter: alpha(opacity=0);
+  opacity: 0;
+  padding: 0;
+  right: 0;
+  position: absolute;
+  margin: 0;
+}
+
+div.row.filedetail, span {
+  padding: 0;
+  margin: 0;
+  line-height: 12px;
+  font-size: 16px;
+}
+
+.btn-group.review-selector {
+  padding-top: 13px;
+}
+
+.file-list-entry {
+  margin: 1em 0;
+}
+
+div.upload {
+  border: 5px dashed;
+  border-color: #A7A9AC;
+  display: table;
+}
+
+div.upload-text {
+  height: 120px;
+  display: table-cell;
+  vertical-align: middle;
+}
+
+div.upload.dragoon {
+  border-color: #ABC8E4;
+}
+
+div#droppable:hover {
+  cursor: pointer;
+}
+
+.icon {
+  text-align: center;
+}
+
+.file-text {
+  margin-left: 10px;
+}
