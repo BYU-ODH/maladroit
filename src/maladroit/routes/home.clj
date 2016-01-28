@@ -10,6 +10,7 @@
   (layout/render "home.html"))
 
 (defn upload-doc [req]
+  (println "Request is: >>>\n" req)
   (timbre/info "Request is: >>>\n" req)
   (let [file-data (-> req :params :file)
         {:keys [filename content-type tempfile]} file-data]
@@ -17,7 +18,7 @@
       (println "\t\t\tPreparing to process file" file-data)
       (catch Exception e (timbre/error (str "An error occurred while uploading: " (.getMessage e)))))
     {:body "Working on the processing"}
-    ;{:body (m/process-file tempfile regexp num-iterations)}
+                                        ;{:body (m/process-file tempfile regexp num-iterations)}
     ))
 
 (defroutes home-routes

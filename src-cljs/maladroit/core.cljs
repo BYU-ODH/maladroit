@@ -9,7 +9,7 @@
             [ajax.core :refer [GET POST]]
             [maladroit.utils :as ut])
   (:import goog.History))
-(def *data* (atom {:regexp #"(?m)^\*"
+(def *data* (atom {:regexp "^\\*"
                    :passes 3
                    :num-keywords 10}))
 
