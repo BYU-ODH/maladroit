@@ -348,6 +348,7 @@
 
 (defn process-file
   ;; emulate: --output-topic-keys --output-doc-topics
+  ;; #"(?m)^\* "
   [file regexp num-iterations]
   (let [instance-list (make-pipe-list)
         strings (-> (easy-file-split file regexp) into-array)

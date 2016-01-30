@@ -45,9 +45,10 @@
            anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))]
        (.open xhr "post" url-target true)
        (.setRequestHeader xhr "x-csrf-token" anti-forgery-token)
-       ;(.setRequestHeader xhr "accept" "application/transit+json")
+                                        ;(.setRequestHeader xhr "accept" "application/transit+json")
        (.append form-data "file" file)
-       (.send xhr form-data)))))
+       (.append form-data "data" @*data*)
+       (.send xhr form-data))))) ;; test
 
 (defn drag-hover
   "When an item is dragged over the element, 
@@ -127,7 +128,7 @@
     :on-click #(.click (upload-input))
     }
    [:div.upload-text.text-center
-    "Drop or Click to Upload"
+    "Drop or Click to Submit .txt"
     [:div (@*up-error* :message)]]])
 
 (defn nav-link [uri title page collapsed?]
