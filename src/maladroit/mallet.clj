@@ -3,7 +3,8 @@
             [clojure.core :refer :all]
             [clojure.java.io :as io]
             [clojure.data.csv :as csv]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [ring.util.io :refer [piped-input-stream]])
   (:import [cc.mallet.util.*]
            [cc.mallet.types InstanceList]
            [cc.mallet.pipe
@@ -13,12 +14,24 @@
             TokenSequence2FeatureSequence]
            [cc.mallet.pipe.iterator FileListIterator StringArrayIterator]
            [cc.mallet.topics ParallelTopicModel]
-           [java.io FileFilter]
+           [java.io
+            FileFilter
+            PipedInputStream
+            PipedOutputStream
+            ByteArrayInputStream
+            ByteArrayOutputStream]
            [java.util Formatter Locale]))
 
 (def ^:dynamic *test-topic-counts*
   [5 10 15 20 25 30 35 40 50 60 70 80 90 100])
 (def ^:dynamic *samples* 100)
+
+(defn to-input-stream
+  "Convert from a byte-array-output-stream to a piped-input stream"
+  [byte-array-output-stream]
+  (piped-input-stream
+   (fn [ostream]
+     (.writeTo byte-array-output-stream ostream))))
 
 (defn easy-file-split
   "Split a file into multiple strings on a regexp, memory intensive"
@@ -350,12 +363,30 @@
   ;; emulate: --output-topic-keys --output-doc-topics
   ;; #"(?m)^\* "
   [file regexp num-iterations]
-  (let [instance-list (make-pipe-list)
+  (let [_ (println "The type of num-iterations, " num-iterations " is " (type num-iterations))
+        instance-list (make-pipe-list)
         strings (-> (easy-file-split file regexp) into-array)
+        _ (println (str "Splitting with " regexp))
+        _ (println "Strings number\n---------------\n" (count strings) "\n\n")
         num-strings-range (-> strings count range)
         _ (add-strings instance-list strings)
+        _ (println "strings added\n\n")
         num-topics 10
         num-threads 4
-        model (train-model num-topics num-threads num-iterations instance-list)]
+        model (train-model num-topics num-threads num-iterations instance-list)
+        _ (println "model trained")]
     {:topics-keys (doall (for [n num-strings-range] (get-topic-words model instance-list n)))
      :topics (get-top-topics model instance-list)}))
+
+(defn flatten-for-tsv
+  [data]
+  (for [d data] (flatten d)))
+
+(defn to-tsv
+  "Outputs topics-keys to a TSV input stream as received from process-file"
+  [data]
+  (let [bos (ByteArrayOutputStream.)]
+    (with-open [os bos
+                w (io/writer os)]
+      (csv/write-csv w (flatten-for-tsv data) :separator \tab))
+    (to-input-stream bos)))

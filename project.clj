@@ -33,6 +33,8 @@
                  [luminus-immutant "0.1.0"]
                  [org.clojure/data.csv "0.1.3"]
                  [cc.mallet/mallet "2.0.7"]
+                 [com.cognitect/transit-cljs "0.8.225"]
+                 [com.cognitect/transit-clj "0.8.283"]
                  [garden "1.3.0"]]
 
   :min-lein-version "2.0.0"

@@ -7,6 +7,7 @@
             [goog.history.EventType :as HistoryEventType]
             [markdown.core :refer [md->html]]
             [ajax.core :refer [GET POST]]
+            [cognitect.transit :as transit]
             [maladroit.utils :as ut])
   (:import goog.History))
 (def *data* (atom {:regexp "^\\*"
@@ -42,12 +43,14 @@
            form-data (js/FormData.)
            doc-key (-> :doc session/get keyword)
            url-target "/upload"
-           anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))]
-       (.open xhr "post" url-target true)
+           anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))
+           w (transit/writer :json)
+           data (transit/write w @*data*)]
+       (.open xhr "get" url-target true)
        (.setRequestHeader xhr "x-csrf-token" anti-forgery-token)
-                                        ;(.setRequestHeader xhr "accept" "application/transit+json")
+       (.setRequestHeader xhr "accept" "text/csv")
        (.append form-data "file" file)
-       (.append form-data "data" @*data*)
+       (.append form-data "data" data)
        (.send xhr form-data))))) ;; test
 
 (defn drag-hover
@@ -167,27 +170,60 @@
      "this is the story of Maladroit... work in progress"]]])
 
 (defn home-page []
-  [:div.container
-   [:div.jumbotron
-    [:h1 "Welcome to Maladroit"]]
-   [:div.well "Upload your document and specify your settings to receive Mallet data"]
-    [:div.regexp
-     [:span.label.label-info "Regexp for Splitting"]
-     [:input.regexp {:type "text"
-                     :value (@*data* :regexp)}]]
-    [:div.passes
-     [:span.label.label-info "Training Passes"]
-     [:input.passes {:type "text"
-                     :value (@*data* :passes)
-                     }]]
-    [:div.keywords
-     [:span.label.label-info "Number of Keywords"]
-     [:input.passes {:type "text"
-                     :value (@*data* :num-keywords)}]]
-      [:div.doc-up
-    [:div.file 
-     (upload-prompt "doc-up")]
-    ]])
+  (let [token (.-value (.getElementById js/document "__anti-forgery-token"))]
+    [:div.container
+     [:div.jumbotron
+      [:h1 "Welcome to Maladroit"]]
+     [:div.well "Upload your document and specify your settings to receive Mallet data"]
+     ;; [:div.regexp
+     ;;  [:span.label.label-info "Regexp for Splitting"]
+     ;;  [:input.regexp {:type "text"
+     ;;                  :value (@*data* :regexp)}]]
+     ;; [:div.passes
+     ;;  [:span.label.label-info "Training Passes"]
+     ;;  [:input.passes {:type "text"
+     ;;                  :value (@*data* :passes)
+     ;;                  }]]
+     ;; [:div.keywords
+     ;;  [:span.label.label-info "Number of Keywords"]
+     ;;  [:input.passes {:type "text"
+     ;;                  :value (@*data* :num-keywords)}]]
+     ;; [:div.doc-up
+     ;;  [:div.file 
+     ;;   (upload-prompt "doc-up")]]
+     [:div.submit-form
+      [:form {:action "/upload"
+              :target "none"
+              :enctype "multipart/form-data"
+              :method "post"}
+       [:input {:type "hidden"
+                :name "__anti-forgery-token"
+                :id "__anti-forgery-token"
+                :value token}]
+       [:div.item
+        [:label {:target "#regexp"} "Split Regexp:"]
+        [:input {:type "text"
+                 :name "regexp"
+                 :id "regexp"
+                 :value (@*data* :regexp)}]]
+       [:div.item
+        [:label {:target "#passes"} "Training Passes:"]
+        [:input {:type "text"
+                 :name "passes"
+                 :id "passes"
+                 :value (@*data* :passes)}]]
+       [:div.item
+        [:label {:target "#num-keywords"} "Number of Keywords:"]
+        [:input {:type "text"
+                 :name "num-keywords"
+                 :id "num-keywords"
+                 :value (@*data* :num-keywords)}]]
+       [:div.item 
+        [:input {:name "file-up"
+                 :id "file-up"
+                 :type "file"}]]
+       [:input {:type "submit"
+                :value "upload"}]]]]))
 
 (def pages
   {:home #'home-page
