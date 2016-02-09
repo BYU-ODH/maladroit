@@ -13,7 +13,7 @@
 (def *data* (atom {:regexp "^\\*"
                    :passes 3
                    :num-keywords 10}))
-
+(def *data-link* (atom [:div.data ""]))
 (def *dragging* (atom false))
 (def *up-error* (atom {:page ()
                        :default-message [:span.label.label-warning ".docx files only"]
@@ -21,14 +21,22 @@
 ;;;;;;;;;;;;;;;;;
 ;; FILE UPLOAD ;;
 ;;;;;;;;;;;;;;;;;
+(defn generate-csv-data-link [csv-data]
+  (let [charset "utf-8,"
+        data (js/encodeURIComponent csv-data)
+        link-text "Download topickeys"
+        uri (str "data: application/csv;" charset data)]
+    [:a {:href uri
+         :download "topickeys.csv"} link-text]))
+
 (defn response-data-listener
   "Act when the response comes after an upload"
   [e]
-  (println "response data listener" e))
+                                        ;(println "response data listener" e)
+  (reset! *data-link* (-> e .-target .-response generate-csv-data-link)))
 
 (defn upload-file
-  "Upload the given file to the server, using 
-  the url and session info to define the target"
+  "Upload the given file to the server"
   ([file] 
    (letfn [(listen-progress [e]
              (let [done (or (.-position e)
@@ -46,7 +54,7 @@
            anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))
            w (transit/writer :json)
            data (transit/write w @*data*)]
-       (.open xhr "get" url-target true)
+       (.open xhr "POST" url-target true)
        (.setRequestHeader xhr "x-csrf-token" anti-forgery-token)
        (.setRequestHeader xhr "accept" "text/csv")
        (.append form-data "file" file)
@@ -175,55 +183,57 @@
      [:div.jumbotron
       [:h1 "Welcome to Maladroit"]]
      [:div.well "Upload your document and specify your settings to receive Mallet data"]
-     ;; [:div.regexp
-     ;;  [:span.label.label-info "Regexp for Splitting"]
-     ;;  [:input.regexp {:type "text"
-     ;;                  :value (@*data* :regexp)}]]
-     ;; [:div.passes
-     ;;  [:span.label.label-info "Training Passes"]
-     ;;  [:input.passes {:type "text"
-     ;;                  :value (@*data* :passes)
-     ;;                  }]]
-     ;; [:div.keywords
-     ;;  [:span.label.label-info "Number of Keywords"]
-     ;;  [:input.passes {:type "text"
-     ;;                  :value (@*data* :num-keywords)}]]
-     ;; [:div.doc-up
-     ;;  [:div.file 
-     ;;   (upload-prompt "doc-up")]]
-     [:div.submit-form
-      [:form {:action "/upload"
-              :target "none"
-              :enctype "multipart/form-data"
-              :method "post"}
-       [:input {:type "hidden"
-                :name "__anti-forgery-token"
-                :id "__anti-forgery-token"
-                :value token}]
-       [:div.item
-        [:label {:target "#regexp"} "Split Regexp:"]
-        [:input {:type "text"
-                 :name "regexp"
-                 :id "regexp"
-                 :value (@*data* :regexp)}]]
-       [:div.item
-        [:label {:target "#passes"} "Training Passes:"]
-        [:input {:type "text"
-                 :name "passes"
-                 :id "passes"
-                 :value (@*data* :passes)}]]
-       [:div.item
-        [:label {:target "#num-keywords"} "Number of Keywords:"]
-        [:input {:type "text"
-                 :name "num-keywords"
-                 :id "num-keywords"
-                 :value (@*data* :num-keywords)}]]
-       [:div.item 
-        [:input {:name "file-up"
-                 :id "file-up"
-                 :type "file"}]]
-       [:input {:type "submit"
-                :value "upload"}]]]]))
+     [:div.regexp
+      [:span.label.label-info "Regexp for Splitting"]
+      [:input.regexp {:type "text"
+                      :value (@*data* :regexp)}]]
+     [:div.passes
+      [:span.label.label-info "Training Passes"]
+      [:input.passes {:type "text"
+                      :value (@*data* :passes)}]]
+     [:div.keywords
+      [:span.label.label-info "Number of Keywords"]
+      [:input.passes {:type "text"
+                      :value (@*data* :num-keywords)}]]
+     [:div.doc-up
+      [:div.file 
+       (upload-prompt "doc-up")]]
+
+     [:div#result {:style {:clear "both"}} @*data-link*]
+     ;; [:div.submit-form
+     ;;  [:form {:action "/upload"
+     ;;          :target "none"
+     ;;          :enctype "multipart/form-data"
+     ;;          :method "POST"}
+     ;;   [:input {:type "hidden"
+     ;;            :name "__anti-forgery-token"
+     ;;            :id "__anti-forgery-token"
+     ;;            :value token}]
+     ;;   [:div.item
+     ;;    [:label {:target "#regexp"} "Split Regexp:"]
+     ;;    [:input {:type "text"
+     ;;             :name "regexp"
+     ;;             :id "regexp"
+     ;;             :value (@*data* :regexp)}]]
+     ;;   [:div.item
+     ;;    [:label {:target "#passes"} "Training Passes:"]
+     ;;    [:input {:type "text"
+     ;;             :name "passes"
+     ;;             :id "passes"
+     ;;             :value (@*data* :passes)}]]
+     ;;   [:div.item
+     ;;    [:label {:target "#num-keywords"} "Number of Keywords:"]
+     ;;    [:input {:type "text"
+     ;;             :name "num-keywords"
+     ;;             :id "num-keywords"
+     ;;             :value (@*data* :num-keywords)}]]
+     ;;   [:div.item 
+     ;;    [:input {:name "file"
+     ;;             :id "file"
+     ;;             :type "file"}]]
+     ;;   [:input {:type "submit"
+     ;;            :value "upload"}]]]
+]))
 
 (def pages
   {:home #'home-page

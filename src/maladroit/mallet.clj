@@ -370,7 +370,7 @@
         _ (println "Strings number\n---------------\n" (count strings) "\n\n")
         num-strings-range (-> strings count range)
         _ (add-strings instance-list strings)
-        _ (println "strings added\n\n")
+        _ (println "Strings added\n\n")
         num-topics 10
         num-threads 4
         model (train-model num-topics num-threads num-iterations instance-list)
@@ -389,4 +389,8 @@
     (with-open [os bos
                 w (io/writer os)]
       (csv/write-csv w (flatten-for-tsv data) :separator \tab))
-    (to-input-stream bos)))
+    bos)) 
+
+(defn to-disk [tsv]
+  (let [out-file "/home/torysa/temp/topickeys.csv"]
+    (with-open [os (io/output-stream out-file)] (.writeTo tsv os))))

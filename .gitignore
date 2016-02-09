@@ -10,3 +10,4 @@ profiles.clj
 /.env
 *.log
 /.nrepl-port
+/log/maladroit.log.1
