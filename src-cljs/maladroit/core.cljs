@@ -1,6 +1,7 @@
 (ns maladroit.core
   (:require [reagent.core :as reagent :refer [atom]]
             [clojure.browser.dom :as dom]
+            [clojure.string :as s]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [goog.events :as events]
@@ -18,22 +19,57 @@
 (def *up-error* (atom {:page ()
                        :default-message [:span.label.label-warning ".docx files only"]
                        :message ()}))
+
+(defn update-data
+  ([key id] (update-data key id nil))
+  ([key id pred]
+   (let [value (->  (.getElementById js/document id) .-value)]
+     (when (and pred
+                (pred value))
+       (swap! *data* assoc key value)))))
+
 ;;;;;;;;;;;;;;;;;
 ;; FILE UPLOAD ;;
 ;;;;;;;;;;;;;;;;;
-(defn generate-csv-data-link [csv-data]
+(defn decode-transit
+  "Handles full-data responses, e.g. for doc uploads.
+  When an error returns (e.g. bad format), update error instead."
+  [data]
+  (let [r (transit/reader :json)]
+    (try 
+      (transit/read r data)
+      (catch js/Error er (dom/log "error with parsing response received")))))
+
+
+(defn generate-csv-data-link [csv-data doc-name]
   (let [charset "utf-8,"
         data (js/encodeURIComponent csv-data)
-        link-text "Download topickeys"
+        link-text (str "Download " doc-name) 
         uri (str "data: application/csv;" charset data)]
     [:a {:href uri
-         :download "topickeys.csv"} link-text]))
+         :download doc-name} link-text]))
+
+;; (defn generate-csv-data-link [csv-data]
+;;   (let [charset "utf-8,"
+;;         data (js/encodeURIComponent csv-data)
+;;         link-text "Download topickeys"
+;;         uri (str "data: application/csv;" charset data)]
+;;     (dom/log "csv-data is of type " (type csv-data) " and has num elements " (count csv-data))
+;;     [:a {:href uri
+;;          :download "topickeys.csv"} link-text]))
 
 (defn response-data-listener
   "Act when the response comes after an upload"
   [e]
-                                        ;(println "response data listener" e)
-  (reset! *data-link* (-> e .-target .-response generate-csv-data-link)))
+  (let [response (-> e .-target .-response)
+        transit-data (-> (decode-transit response)
+                         (#(for [[t] %]
+                             (do (println "dat is " (type t))
+                                 (s/replace t "\t" \tab)
+                                 ))))
+        doc-names ["keywords.csv" "topics.csv"]]
+    (dom/log "data is->>>>>> " (type transit-data) "with count " (count transit-data))
+    (reset! *data-link* (into [:div.data] (for [[csv name] (map vector transit-data doc-names)] (do (println "name: " name) (generate-csv-data-link (str csv) name)))))))
 
 (defn upload-file
   "Upload the given file to the server"
@@ -56,7 +92,8 @@
            data (transit/write w @*data*)]
        (.open xhr "POST" url-target true)
        (.setRequestHeader xhr "x-csrf-token" anti-forgery-token)
-       (.setRequestHeader xhr "accept" "text/csv")
+       (.setRequestHeader xhr "accept" "application/transit+json")
+       ;(.setRequestHeader xhr "accept" "text/csv")
        (.append form-data "file" file)
        (.append form-data "data" data)
        (.send xhr form-data))))) ;; test
@@ -186,54 +223,29 @@
      [:div.regexp
       [:span.label.label-info "Regexp for Splitting"]
       [:input.regexp {:type "text"
-                      :value (@*data* :regexp)}]]
+                      :name "regex"
+                      :id "regex"
+                      :value (@*data* :regexp)
+                      :on-change #(update-data :regexp "regex")}]]
      [:div.passes
       [:span.label.label-info "Training Passes"]
       [:input.passes {:type "text"
-                      :value (@*data* :passes)}]]
+                      :name "passes"
+                      :id "passes"
+                      :value (@*data* :passes)
+                      :on-change #(update-data :passes "passes" number?)}]]
      [:div.keywords
       [:span.label.label-info "Number of Keywords"]
       [:input.passes {:type "text"
+                      :name "keywords"
+                      :id "keywords"
+                      :on-change #(update-data :num-keywords "keywords" number?)
                       :value (@*data* :num-keywords)}]]
      [:div.doc-up
       [:div.file 
        (upload-prompt "doc-up")]]
 
-     [:div#result {:style {:clear "both"}} @*data-link*]
-     ;; [:div.submit-form
-     ;;  [:form {:action "/upload"
-     ;;          :target "none"
-     ;;          :enctype "multipart/form-data"
-     ;;          :method "POST"}
-     ;;   [:input {:type "hidden"
-     ;;            :name "__anti-forgery-token"
-     ;;            :id "__anti-forgery-token"
-     ;;            :value token}]
-     ;;   [:div.item
-     ;;    [:label {:target "#regexp"} "Split Regexp:"]
-     ;;    [:input {:type "text"
-     ;;             :name "regexp"
-     ;;             :id "regexp"
-     ;;             :value (@*data* :regexp)}]]
-     ;;   [:div.item
-     ;;    [:label {:target "#passes"} "Training Passes:"]
-     ;;    [:input {:type "text"
-     ;;             :name "passes"
-     ;;             :id "passes"
-     ;;             :value (@*data* :passes)}]]
-     ;;   [:div.item
-     ;;    [:label {:target "#num-keywords"} "Number of Keywords:"]
-     ;;    [:input {:type "text"
-     ;;             :name "num-keywords"
-     ;;             :id "num-keywords"
-     ;;             :value (@*data* :num-keywords)}]]
-     ;;   [:div.item 
-     ;;    [:input {:name "file"
-     ;;             :id "file"
-     ;;             :type "file"}]]
-     ;;   [:input {:type "submit"
-     ;;            :value "upload"}]]]
-]))
+     [:div#result {:style {:clear "both"}} @*data-link*]]))
 
 (def pages
   {:home #'home-page

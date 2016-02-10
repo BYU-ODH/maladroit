@@ -93,3 +93,7 @@ div#droppable:hover {
 .file-text {
   margin-left: 10px;
 }
+
+.data a {
+  display: block;
+}

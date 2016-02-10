@@ -91,4 +91,5 @@
   [:div.upload.dragoon {:border-color (ycolors :blue9)}]
   [:div#droppable:hover {:cursor "pointer"} ]
   [:.icon {:text-align "center"}]
-  [:.file-text {:margin-left (px 10)}])
+  [:.file-text {:margin-left (px 10)}]
+  [:.data [:a {:display "block"}]])

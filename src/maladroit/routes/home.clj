@@ -20,7 +20,8 @@
 (defn make-file-download [data file-name content-type]
   (-> data r/response
       (#(r/header % "Content-Disposition" (str "attachment; filename=\"" file-name "\"")))
-      (#(r/header % "Content-Type" content-type))))
+      (#(r/header % "Content-Type" content-type))
+      ))
 
 (defn upload-doc [req]
   (timbre/info "Request is: >>>\n" req)
@@ -28,16 +29,15 @@
         file-data (-> req :params :file)
         {:keys [filename content-type tempfile]} file-data        ;; AJAX version
                                         ;file-data (:file params) ;; FORM version
-        _ (println "type of tempfile is " (type tempfile))
-        ;process-req (-> req :params :data decode-transit-string)
-        ;_ (println "\n\n Process req is " process-req "of type " (type process-req))
+                                        ;process-req (-> req :params :data decode-transit-string)
         data (-> req :params :data decode-transit-string) ;; AJAX
         {:keys [regexp passes num-keywords]} data
         _ (println "passes is " passes)
         default-re #"(?m)^\* "
         re (try
              (re-pattern regexp)
-             (catch Exception e default-re))
+             (catch Exception e (do (timbre/warn "Failed to convert regexp")
+                                    default-re)))
         file-stream (io/input-stream tempfile)
         results (m/process-file tempfile default-re passes)
         topics-keys-results (-> results
@@ -49,16 +49,23 @@
         topics-results (-> results
                            :topics
                            m/to-tsv
-                           str)
+                           str
+                           )
         txt-results {:keys topics-keys-results
                      :topics topics-results}]
     ;; (with-open [os  (io/output-stream "/home/torysa/temp/uploaded.txt")]
     ;;   (spit os (slurp tempfile))) ;; this works, too
     ;(println "Wrote to /home/torysa/temp/uploaded.txt")
                                         ;(timbre/info (slurp tempfile)) ;; this works
-    ;; {:body [(make-file-download topics-keys-results "topicskeys.csv" "application/csv")
-    ;;         (make-file-download topics-results "topics.csv" "application/csv")]}
-    (make-file-download topics-keys-results "topicskeys.csv" "application/csv")
+    ;; {:body [[topics-keys-results]
+    ;;         topics-results]}
+    (println "Topics results is " topics-results)
+    (make-file-download
+     [[topics-keys-results]
+      [topics-results]]
+     "results.csv"
+     "application/transit+json")
+    ;(make-file-download topics-keys-results "topicskeys.csv" "application/transit+json")
     ;(make-file-download topics-keys-results "doctopics.csv" "application/csv")
     ))
 
