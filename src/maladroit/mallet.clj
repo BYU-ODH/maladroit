@@ -262,6 +262,19 @@
         [_ mx] (apply max-key second probs)]
     (filterv #(= (second %) mx) probs)))
 
+(defn get-all-topics-instance
+  [model instance-n]
+  (mapv vector
+        (range)
+        (.getTopicProbabilities model instance-n)))
+
+(defn get-all-topics
+  [model instance-names]
+  (->> instance-names
+       .size
+       range
+       (map #(vector (get instance-names %) (get-all-topics-instance model %)))))
+
 (defn get-top-topics
   "Returns a sequence of pairs of the instance ID and the top
   topic(s) for that instance."
@@ -345,38 +358,72 @@
    (map first)             ; Throw away probabilities.
    (reduce inc-count {})))
 
-(defn do-mallet
-       ;; emulate: --output-topic-keys --output-doc-topics
-  ([] (do-mallet 0))
-  ([topic-n]
-   (let [instance-list (make-pipe-list)
-         strings (-> (easy-file-split) into-array)
-         num-strings-range (range (count strings))
-                                        ;_ (add-directory-files instance-list file-dir)
-         _ (add-strings instance-list strings)
-         model (train-model instance-list)]
-     {:topics-keys (for [n num-strings-range] (get-topic-words model instance-list n))
-      :topics (get-top-topics model instance-list)})))
-;; bin/mallet train-topics --input ~/Desktop/texts.mallet --num-topics 10 --output-topic-keys ~/Desktop/topic_keys.txt --output-doc-topics ~/Desktop/doc_topics.txt --optimize-interval 10 --random-seed 1 --num-threads 8 
+(defn topic-keywords
+  "Get topics and keywords for whole corpus"
+  [& {:keys [file num-iterations num-topics num-threads num-keywords instance-list model]
+      :or {file "/home/torysa/Workspace/Docs/maladroit/quad.txt"
+           num-iterations 10
+           num-topics 10
+           num-threads 4
+           num-keywords 8}}]
+  (let [string-vec (if-not instance-list
+                 (-> file slurp vector into-array)
+                 nil)
+        the-instance-list (or instance-list
+                              (make-pipe-list))
+        maybe-add-strings (when-not instance-list ;; add strings if we are making a new instance list
+                            (add-strings the-instance-list string-vec))
+        model (or model
+                 (train-model num-topics num-threads num-iterations the-instance-list))
+        keywords-list (into []
+                            (for [n (range num-topics)]
+                              (take num-keywords (get-topic-words model the-instance-list n))))]
+    (map-indexed vector keywords-list)))
+
+(defn get-topic-name [s]
+  (let [dlen 20
+        slen (count s)]
+  (cond
+    (= 0 (count s)) "Blank"
+    (< slen dlen) (subs s 0 slen)
+    :defaul (subs s 0 dlen))))
 
 (defn process-file
   ;; emulate: --output-topic-keys --output-doc-topics
   ;; #"(?m)^\* "
-  [file regexp num-iterations]
-  (let [_ (println "The type of num-iterations, " num-iterations " is " (type num-iterations))
-        instance-list (make-pipe-list)
-        strings (-> (easy-file-split file regexp) into-array)
-        _ (println (str "Splitting with " regexp))
-        _ (println "Strings number\n---------------\n" (count strings) "\n\n")
-        num-strings-range (-> strings count range)
-        _ (add-strings instance-list strings)
+  [& {:keys [file regexp num-iterations num-topics num-threads]
+      :or {file "/home/torysa/Workspace/Docs/maladroit/quad.txt"
+           regexp #"(?m)^\* "
+           num-iterations 10
+           num-topics 10
+           num-threads 4
+           num-keywords 8}}]
+  (let [overall-instance-list (make-pipe-list)
+        topics-strings (-> file (easy-file-split regexp))
+        instance-names (into [] (for [s topics-strings] (get-topic-name s)))
+        topics-strings-array (into-array topics-strings)
+                                        ;overall-topics-string (-> file slurp vector into-array)
+        _populate-list (add-strings overall-instance-list topics-strings-array)
         _ (println "Strings added\n\n")
-        num-topics 10
-        num-threads 4
-        model (train-model num-topics num-threads num-iterations instance-list)
-        _ (println "model trained")]
-    {:topics-keys (doall (for [n num-strings-range] (get-topic-words model instance-list n)))
-     :topics (get-top-topics model instance-list)}))
+        ;; _ (println (str "Splitting with " regexp))
+
+        ;; _ (println "Strings number\n---------------\n" (count strings) "\n\n")
+        ;;num-strings-range (-> strings count range)
+        model (train-model num-topics num-threads num-iterations overall-instance-list)
+        _ (println "model trained")
+        tk (topic-keywords :file file
+                           :model model
+                           :instance-list overall-instance-list
+                           :num-iterations num-iterations
+                           :num-topics num-topics
+                           :num-threads num-threads)
+        _ (println "topic-keywords successful")
+        ;; TODO: Need names for each instance
+        
+        dt (get-all-topics model instance-names) ; TODO We're having troubles with this one. Is the model, trained on different instances, the problem? 
+        ]
+    {:topics-keys tk
+     :doc-topics dt}))
 
 (defn flatten-for-tsv
   [data]

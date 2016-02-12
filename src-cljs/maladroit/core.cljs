@@ -13,6 +13,7 @@
   (:import goog.History))
 (def *data* (atom {:regexp "^\\*"
                    :passes 3
+                   :num-topics 8
                    :num-keywords 10}))
 (def *data-link* (atom [:div.data ""]))
 (def *dragging* (atom false))
@@ -22,10 +23,11 @@
 
 (defn update-data
   ([key id] (update-data key id nil))
-  ([key id pred]
+  ([key id conversion-fun]
    (let [value (->  (.getElementById js/document id) .-value)]
-     (when (and pred
-                (pred value))
+     (if conversion-fun
+       (when-let [casted (conversion-fun value)]
+         (swap! *data* assoc key casted))
        (swap! *data* assoc key value)))))
 
 ;;;;;;;;;;;;;;;;;
@@ -233,14 +235,21 @@
                       :name "passes"
                       :id "passes"
                       :value (@*data* :passes)
-                      :on-change #(update-data :passes "passes" number?)}]]
+                      :on-change #(update-data :passes "passes" js/parseInt)}]]
      [:div.keywords
       [:span.label.label-info "Number of Keywords"]
       [:input.passes {:type "text"
                       :name "keywords"
                       :id "keywords"
-                      :on-change #(update-data :num-keywords "keywords" number?)
+                      :on-change #(update-data :num-keywords "keywords" js/parseInt)
                       :value (@*data* :num-keywords)}]]
+     [:div.topics
+      [:span.label.label-info "Number of Topics"]
+      [:input.passes {:type "text"
+                      :name "topics"
+                      :id "topics"
+                      :on-change #(update-data :num-topics "topics" js/parseInt)
+                      :value (@*data* :num-topics)}]]
      [:div.doc-up
       [:div.file 
        (upload-prompt "doc-up")]]

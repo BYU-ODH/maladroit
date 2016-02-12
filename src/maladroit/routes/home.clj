@@ -1,6 +1,6 @@
 (ns maladroit.routes.home
   (:require [maladroit.layout :as layout]
-            [compojure.core :refer [defroutes GET POST ]]
+            [compojure.core :refer [defroutes GET POST]]
             [ring.util.http-response :refer [ok]]
             [ring.util.response :as r]
             [clojure.java.io :as io]
@@ -31,43 +31,36 @@
                                         ;file-data (:file params) ;; FORM version
                                         ;process-req (-> req :params :data decode-transit-string)
         data (-> req :params :data decode-transit-string) ;; AJAX
-        {:keys [regexp passes num-keywords]} data
+        {:keys [regexp passes num-keywords num-topics]} data
         _ (println "passes is " passes)
         default-re #"(?m)^\* "
         re (try
-             (re-pattern regexp)
+             (re-pattern (str "(?m)" regexp))
              (catch Exception e (do (timbre/warn "Failed to convert regexp")
                                     default-re)))
+        _ (println "Regexp is " re)
         file-stream (io/input-stream tempfile)
-        results (m/process-file tempfile default-re passes)
+        results (m/process-file :file tempfile
+                                :regexp re
+                                :num-iterations passes
+                                :num-keywords num-keywords
+                                :num-topics num-topics)
         topics-keys-results (-> results
                     :topics-keys
                     m/to-tsv
-                    str
-                    ;m/to-input-stream
-                    )
+                    str)
         topics-results (-> results
-                           :topics
+                           :doc-topics
                            m/to-tsv
-                           str
-                           )
+                           str)
         txt-results {:keys topics-keys-results
                      :topics topics-results}]
-    ;; (with-open [os  (io/output-stream "/home/torysa/temp/uploaded.txt")]
-    ;;   (spit os (slurp tempfile))) ;; this works, too
-    ;(println "Wrote to /home/torysa/temp/uploaded.txt")
-                                        ;(timbre/info (slurp tempfile)) ;; this works
-    ;; {:body [[topics-keys-results]
-    ;;         topics-results]}
     (println "Topics results is " topics-results)
     (make-file-download
      [[topics-keys-results]
       [topics-results]]
      "results.csv"
-     "application/transit+json")
-    ;(make-file-download topics-keys-results "topicskeys.csv" "application/transit+json")
-    ;(make-file-download topics-keys-results "doctopics.csv" "application/csv")
-    ))
+     "application/transit+json")))
 
 (defroutes home-routes
   (GET "/" [] (home-page))
