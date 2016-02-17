@@ -88,7 +88,7 @@
            load-listener (.addEventListener xhr "load" response-data-listener)
            form-data (js/FormData.)
            doc-key (-> :doc session/get keyword)
-           url-target "/upload"
+           url-target "upload"
            anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))
            w (transit/writer :json)
            data (transit/write w @*data*)]
@@ -208,13 +208,14 @@
          (when-not @collapsed? {:class "in"})
          [:ul.nav.navbar-nav
           [nav-link "#/" "Home" :home collapsed?]
-          [nav-link "#/about" "About" :about collapsed?]]]]])))
+          ;[nav-link "#/about" "About" :about collapsed?]
+          ]]]])))
 
 (defn about-page []
   [:div.container
    [:div.row
     [:div.col-md-12
-     "this is the story of Maladroit... work in progress"]]])
+     "Maladroit: Text-processing with Mallet"]]])
 
 (defn home-page []
   (let [token (.-value (.getElementById js/document "__anti-forgery-token"))]
@@ -287,13 +288,13 @@
 ;; -------------------------
 ;; Initialize app
 (defn fetch-docs! []
-  (GET (str js/context "/docs") {:handler #(session/put! :docs %)}))
+  (GET (str js/context "docs") {:handler #(session/put! :docs %)}))
 
 (defn mount-components []
   (reagent/render [#'navbar] (.getElementById js/document "navbar"))
   (reagent/render [#'page] (.getElementById js/document "app")))
 
 (defn init! []
-  (fetch-docs!)
+  ;(fetch-docs!)
   (hook-browser-navigation!)
   (mount-components))

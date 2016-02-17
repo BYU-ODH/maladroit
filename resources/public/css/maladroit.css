@@ -84,6 +84,7 @@ div.upload.dragoon {
 
 div#droppable:hover {
   cursor: pointer;
+  border-color: #628CB6;
 }
 
 .icon {
@@ -96,4 +97,13 @@ div#droppable:hover {
 
 .data a {
   display: block;
+}
+
+.label.label-info {
+  display: inline-block;
+  width: 150;
+}
+
+.doc-up {
+  margin-top: 30;
 }

@@ -89,7 +89,12 @@
                      :vertical-align "middle"
                      }]
   [:div.upload.dragoon {:border-color (ycolors :blue9)}]
-  [:div#droppable:hover {:cursor "pointer"} ]
+  [:div#droppable:hover {:cursor "pointer"
+                         :border-color (ycolors :midblue)} ]
   [:.icon {:text-align "center"}]
   [:.file-text {:margin-left (px 10)}]
-  [:.data [:a {:display "block"}]])
+  [:.data [:a {:display "block"}]]
+  [:.label.label-info {:display "inline-block"
+                       :width 150}]
+  [:.doc-up {:margin-top 30}])
+

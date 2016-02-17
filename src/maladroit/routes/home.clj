@@ -55,7 +55,7 @@
                            str)
         txt-results {:keys topics-keys-results
                      :topics topics-results}]
-    (println "Topics results is " topics-results)
+    ;(println "Topics results is " topics-results)
     (make-file-download
      [[topics-keys-results]
       [topics-results]]
