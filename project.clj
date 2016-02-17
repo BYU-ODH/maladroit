@@ -45,8 +45,13 @@
   :main maladroit.core
 
   :plugins [[lein-environ "1.0.1"]
+            [lein-uberwar "0.1.0"]
             [lein-cljsbuild "1.1.1"]
             [lein-garden "0.2.6"]]
+  :uberwar {:handler maladroit.handler/app
+            :init maladroit.handler/init
+            :destroy maladroit.handler/destroy
+            :name "maladroit.war"}
   :garden {:builds [{:id "maladroit"
                      :source-paths ["src/styles"]
                      :stylesheet maladroit.styles/maladroit
