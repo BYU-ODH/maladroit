@@ -44,15 +44,19 @@
 (defn make-pipe-list
   "Creates an `InstanceList` that tokenizes and normalizes a
   list of input files. It also removes stopwords."
-  []
-  (InstanceList.
-   (SerialPipes.
-    [(Input2CharSequence. "UTF-8")
-     (CharSequence2TokenSequence.
-      #"\p{L}[\p{L}\p{P}]+\p{L}")
-     (TokenSequenceLowercase.)
-     (TokenSequenceRemoveStopwords. false false)
-     (TokenSequence2FeatureSequence.)])))
+  ([] (make-pipe-list nil))
+  ([stopwords]
+   (let [remove-stopwords (TokenSequenceRemoveStopwords. false false)]
+     (when stopwords
+       (.addStopWords remove-stopwords stopwords))
+     (InstanceList.
+      (SerialPipes.
+       [(Input2CharSequence. "UTF-8")
+        (CharSequence2TokenSequence.
+         #"\p{L}[\p{L}\p{P}]+\p{L}")
+        (TokenSequenceLowercase.)
+        remove-stopwords
+        (TokenSequence2FeatureSequence.)])))))
 
 (defn add-strings
   [instance-list data-array]
@@ -397,8 +401,9 @@
            num-iterations 10
            num-topics 10
            num-threads 4
-           num-keywords 8}}]
-  (let [overall-instance-list (make-pipe-list)
+           num-keywords 8
+           stopwords (into-array String [])}}]
+  (let [overall-instance-list (make-pipe-list stopwords)
         topics-strings (-> file (easy-file-split regexp))
         instance-names (into [] (for [s topics-strings] (get-topic-name s)))
         topics-strings-array (into-array topics-strings)

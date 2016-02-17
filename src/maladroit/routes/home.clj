@@ -14,6 +14,9 @@
         r (transit/reader bis :json)]
     (transit/read r)))
 
+(defn parse-stopwords [sw]
+  (into-array (clojure.string/split sw \space)))
+
 (defn home-page []
   (layout/render "home.html"))
 
@@ -31,7 +34,7 @@
                                         ;file-data (:file params) ;; FORM version
                                         ;process-req (-> req :params :data decode-transit-string)
         data (-> req :params :data decode-transit-string) ;; AJAX
-        {:keys [regexp passes num-keywords num-topics]} data
+        {:keys [regexp passes num-keywords num-topics stopwords]} data
         _ (println "passes is " passes)
         default-re #"(?m)^\* "
         re (try
@@ -44,7 +47,9 @@
                                 :regexp re
                                 :num-iterations passes
                                 :num-keywords num-keywords
-                                :num-topics num-topics)
+                                :num-topics num-topics
+                                :stopwords (parse-stopwords stopwords))
+        _ (println "Stopwords is " stopwords " of type " (type stopwords))
         topics-keys-results (-> results
                     :topics-keys
                     m/to-tsv

@@ -14,12 +14,16 @@
 (def *data* (atom {:regexp "^\\*"
                    :passes 3
                    :num-topics 8
-                   :num-keywords 10}))
+                   :num-keywords 10
+                   :stopwords ""}))
 (def *data-link* (atom [:div.data ""]))
 (def *dragging* (atom false))
 (def *up-error* (atom {:page ()
                        :default-message [:span.label.label-warning ".docx files only"]
                        :message ()}))
+
+(defn space-split [string]
+  (s/split string \space))
 
 (defn update-data
   ([key id] (update-data key id nil))
@@ -251,6 +255,14 @@
                       :id "topics"
                       :on-change #(update-data :num-topics "topics" js/parseInt)
                       :value (@*data* :num-topics)}]]
+     [:div.stopwords
+      [:span.label.label-info "Extra Stopwords"]
+      [:input.passes {:type "text"
+                      :name "stopwords"
+                      :id "stopwords"
+                      :on-change #(update-data :stopwords "stopwords")
+                      :value (@*data* :stopwords)}]
+      [:span.text-info "Space separated"]]
      [:div.doc-up
       [:div.file 
        (upload-prompt "doc-up")]]
