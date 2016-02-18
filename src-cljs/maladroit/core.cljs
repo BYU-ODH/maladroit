@@ -12,12 +12,13 @@
             [maladroit.utils :as ut])
   (:import goog.History))
 (def *data* (atom {:regexp "^\\*"
-                   :passes 3
+                   :passes 1000
                    :num-topics 8
                    :num-keywords 10
                    :stopwords ""}))
 (def *data-link* (atom [:div.data ""]))
 (def *dragging* (atom false))
+(def *drop-classes* (atom "droppster"))
 (def *up-error* (atom {:page ()
                        :default-message [:span.label.label-warning ".docx files only"]
                        :message ()}))
@@ -55,15 +56,6 @@
     [:a {:href uri
          :download doc-name} link-text]))
 
-;; (defn generate-csv-data-link [csv-data]
-;;   (let [charset "utf-8,"
-;;         data (js/encodeURIComponent csv-data)
-;;         link-text "Download topickeys"
-;;         uri (str "data: application/csv;" charset data)]
-;;     (dom/log "csv-data is of type " (type csv-data) " and has num elements " (count csv-data))
-;;     [:a {:href uri
-;;          :download "topickeys.csv"} link-text]))
-
 (defn response-data-listener
   "Act when the response comes after an upload"
   [e]
@@ -74,6 +66,8 @@
                                  (s/replace t "\t" \tab)
                                  ))))
         doc-names ["keywords.csv" "topics.csv"]]
+    (dom/log "Drop classes were " @*drop-classes*)
+    (reset! *drop-classes* "")
     (dom/log "data is->>>>>> " (type transit-data) "with count " (count transit-data))
     (reset! *data-link* (into [:div.data] (for [[csv name] (map vector transit-data doc-names)] (do (println "name: " name) (generate-csv-data-link (str csv) name)))))))
 
@@ -85,7 +79,7 @@
                             (.-loaded e))
                    total (or (.-totalsize e)
                              (.-total e))
-                   percent (.round js/Math (/ done (* 100 total)))]
+                   percent (.round js/Math (/ done (* 100 total)))]               
                (.log js/console (str "xhr progress " percent "%"))))]
      (let [xhr (js/XMLHttpRequest.)
            progress-listener (.addEventListener xhr "progress" listen-progress)
@@ -96,6 +90,7 @@
            anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))
            w (transit/writer :json)
            data (transit/write w @*data*)]
+       (swap! *drop-classes* str " parsing-file")
        (.open xhr "POST" url-target true)
        (.setRequestHeader xhr "x-csrf-token" anti-forgery-token)
        (.setRequestHeader xhr "accept" "application/transit+json")
@@ -156,9 +151,8 @@
 (defn droppable-class
   "Render the element appropriately when hovered, if it's a doc page"
   []
-  (if (session/get :doc)
-    (when @*dragging*
-      "dragoon")
+  (if @*dragging*
+    "dragoon"
     ""))
 
 (defn upload-input
@@ -175,7 +169,7 @@
   [element-id]
   [:div.upload.col-md-3
    {:id "droppable"
-    :class (droppable-class) 
+    :class @*drop-classes*
     :on-drag-over #(drag-hover %)
     :on-drag-leave #(drag-off %)
     :on-drop #(drag-drop %)
@@ -234,13 +228,13 @@
                       :id "regex"
                       :value (@*data* :regexp)
                       :on-change #(update-data :regexp "regex")}]]
-     [:div.passes
-      [:span.label.label-info "Training Passes"]
-      [:input.passes {:type "text"
-                      :name "passes"
-                      :id "passes"
-                      :value (@*data* :passes)
-                      :on-change #(update-data :passes "passes" js/parseInt)}]]
+     ;; [:div.passes
+     ;;  [:span.label.label-info "Training Passes"]
+     ;;  [:input.passes {:type "text"
+     ;;                  :name "passes"
+     ;;                  :id "passes"
+     ;;                  :value (@*data* :passes)
+     ;;                  :on-change #(update-data :passes "passes" js/parseInt)}]]
      [:div.keywords
       [:span.label.label-info "Number of Keywords"]
       [:input.passes {:type "text"

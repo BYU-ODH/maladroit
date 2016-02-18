@@ -120,6 +120,28 @@
          (iterator-seq (.. topic-words (get topic-n)
                            iterator)))))
 
+(defn get-topic-words-only
+  "Returns the words as they apply to the given topic."
+  [model instances topic-n]
+  (let [topic-words (.getSortedWords model)
+        data-alpha (.getDataAlphabet instances)]
+    (map #(vector (.lookupObject data-alpha (.getID %))
+                  ;(.getWeight %)
+                  )
+         (iterator-seq (.. topic-words (get topic-n)
+                           iterator)))))
+
+(defn get-model-topic-words
+  "Returns [[instance-num [word-list]]] for each instance in the model"
+  [model instances]
+  (let [num-words 5
+        model-words (.getSortedWords model)
+        data-alpha (.getDataAlphabet instances)]
+    ;; for each topic,
+    (for [topic-words model-words]
+      (into [] (for [w (take num-words topic-words)]
+                 (.lookupObject data-alpha (.getID w)))))))
+
 (defn get-topic-dists
   "Returns a list of maps containing information about the
   topics (from `make-topic-info`) for the given instance. Sorted
@@ -191,10 +213,15 @@
 
 (defn train-model
   "Returns a trained model."
-  ([instances] (train-model 100 4 50 instances))
+  ([instances] (train-model 10 4 1000 instances))
   ([num-topics num-threads num-iterations instances]
-   (doto (ParallelTopicModel. num-topics 1.0 0.01)
+   (doto (ParallelTopicModel. num-topics 5.0 0.01) ;; changed alphasum to 5.0 to match cli
+     ;; num-topics alphaSum beta
      (.addInstances instances)
+     (.setOptimizeInterval 10) ;; TSA
+     (.setRandomSeed 1)        ; TSA
+     (.setBurninPeriod 200)    ; TSA
+     (.setSymmetricAlpha true)  ; TSA
      (.setNumThreads num-threads)
      (.setNumIterations num-iterations)
      (.estimate))))
@@ -366,7 +393,7 @@
   "Get topics and keywords for whole corpus"
   [& {:keys [file num-iterations num-topics num-threads num-keywords instance-list model]
       :or {file "/home/torysa/Workspace/Docs/maladroit/quad.txt"
-           num-iterations 10
+           num-iterations 1000
            num-topics 10
            num-threads 4
            num-keywords 8}}]
@@ -379,9 +406,11 @@
                             (add-strings the-instance-list string-vec))
         model (or model
                  (train-model num-topics num-threads num-iterations the-instance-list))
-        keywords-list (into []
-                            (for [n (range num-topics)]
-                              (take num-keywords (get-topic-words model the-instance-list n))))]
+        keywords-list (get-model-topic-words model instance-list)
+        ;; keywords-list (into []
+        ;;                     (for [n (range num-topics)]
+        ;;                       (take num-keywords (get-topic-words-only model the-instance-list n))))
+        ]
     (map-indexed vector keywords-list)))
 
 (defn get-topic-name [s]
@@ -398,7 +427,7 @@
   [& {:keys [file regexp num-iterations num-topics num-threads stopwords]
       :or {file "/home/torysa/Workspace/Docs/maladroit/quad.txt"
            regexp #"(?m)^\* "
-           num-iterations 10
+           num-iterations 1000
            num-topics 10
            num-threads 4
            num-keywords 8
