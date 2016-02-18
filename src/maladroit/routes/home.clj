@@ -15,7 +15,7 @@
     (transit/read r)))
 
 (defn parse-stopwords [sw]
-  (into-array (clojure.string/split sw \space)))
+  (into-array (clojure.string/split sw #" ")))
 
 (defn home-page []
   (layout/render "home.html"))
@@ -48,8 +48,9 @@
                                 :num-iterations passes
                                 :num-keywords num-keywords
                                 :num-topics num-topics
-                                :stopwords (parse-stopwords stopwords))
-        _ (println "Stopwords is " stopwords " of type " (type stopwords))
+                                :stopwords (parse-stopwords stopwords)
+                                )
+        _ (println "Stopwords is " stopwords " of type " (type stopwords) ". Parsed, that's " (parse-stopwords stopwords))
         topics-keys-results (-> results
                     :topics-keys
                     m/to-tsv
@@ -66,7 +67,6 @@
       [topics-results]]
      "results.csv"
      "application/transit+json")))
-
 (defroutes home-routes
   (GET "/" [] (home-page))
   (POST "/upload" req (upload-doc req))

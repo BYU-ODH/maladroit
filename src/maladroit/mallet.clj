@@ -395,7 +395,7 @@
 (defn process-file
   ;; emulate: --output-topic-keys --output-doc-topics
   ;; #"(?m)^\* "
-  [& {:keys [file regexp num-iterations num-topics num-threads]
+  [& {:keys [file regexp num-iterations num-topics num-threads stopwords]
       :or {file "/home/torysa/Workspace/Docs/maladroit/quad.txt"
            regexp #"(?m)^\* "
            num-iterations 10
@@ -407,13 +407,8 @@
         topics-strings (-> file (easy-file-split regexp))
         instance-names (into [] (for [s topics-strings] (get-topic-name s)))
         topics-strings-array (into-array topics-strings)
-                                        ;overall-topics-string (-> file slurp vector into-array)
         _populate-list (add-strings overall-instance-list topics-strings-array)
         _ (println "Strings added\n\n")
-        ;; _ (println (str "Splitting with " regexp))
-
-        ;; _ (println "Strings number\n---------------\n" (count strings) "\n\n")
-        ;;num-strings-range (-> strings count range)
         model (train-model num-topics num-threads num-iterations overall-instance-list)
         _ (println "model trained")
         tk (topic-keywords :file file
@@ -423,9 +418,7 @@
                            :num-topics num-topics
                            :num-threads num-threads)
         _ (println "topic-keywords successful")
-        ;; TODO: Need names for each instance
-        
-        dt (get-all-topics model instance-names) ; TODO We're having troubles with this one. Is the model, trained on different instances, the problem? 
+        dt (get-all-topics model instance-names)
         ]
     {:topics-keys tk
      :doc-topics dt}))
