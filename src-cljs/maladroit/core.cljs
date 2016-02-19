@@ -91,7 +91,7 @@
            load-listener (.addEventListener xhr "load" response-data-listener)
            form-data (js/FormData.)
            doc-key (-> :doc session/get keyword)
-           url-target "/upload"
+           url-target "upload"
            anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))
            w (transit/writer :json)
            data (transit/write w @*data*)]

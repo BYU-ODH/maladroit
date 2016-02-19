@@ -46,6 +46,7 @@
 
   :plugins [[lein-environ "1.0.1"]
             [lein-uberwar "0.1.0"]
+            ;[lein-uberwar "0.2.0"]
             [lein-cljsbuild "1.1.1"]
             [lein-garden "0.2.6"]]
   :uberwar {:handler maladroit.handler/app
@@ -94,7 +95,7 @@
                                  [lein-figwheel "0.5.0-4"]
                                  [com.cemerick/piggieback "0.2.2-SNAPSHOT"]]
                   :plugins [[lein-figwheel "0.5.0-4"] [org.clojure/clojurescript "1.7.228"]]
-                   :cljsbuild
+                  :cljsbuild
                    {:builds
                     {:app
                      {:source-paths ["env/dev/cljs"]
