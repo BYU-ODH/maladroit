@@ -11,18 +11,22 @@
             [cognitect.transit :as transit]
             [maladroit.utils :as ut])
   (:import goog.History))
+(def *file* (atom nil))
 (def *data* (atom {:regexp "^\\*"
-                   :passes 1000
+                   :passes 300
                    :num-topics 8
                    :num-keywords 10
                    :stopwords ""}))
+(def *submit-text* (atom [:div.submit-text "Drop or click to select .txt file"]))
 (def *data-link* (atom [:div.data ""]))
 (def *dragging* (atom false))
-(def *drop-classes* (atom "droppster"))
+(def *drop-classes* (atom ""))
 (def *up-error* (atom {:page ()
                        :default-message [:span.label.label-warning ".docx files only"]
                        :message ()}))
-
+(def *submit-button* (atom {:text "Upload File First"
+                            :class "disabled"
+                            :disabled true}))
 (defn space-split [string]
   (s/split string \space))
 
@@ -66,9 +70,10 @@
                                  (s/replace t "\t" \tab)
                                  ))))
         doc-names ["keywords.csv" "topics.csv"]]
-    (dom/log "Drop classes were " @*drop-classes*)
+    (reset! *submit-button* {:text "Process Again"
+                             :class "enabled"
+                             :disabled false})
     (reset! *drop-classes* "")
-    (dom/log "data is->>>>>> " (type transit-data) "with count " (count transit-data))
     (reset! *data-link* (into [:div.data] (for [[csv name] (map vector transit-data doc-names)] (do (println "name: " name) (generate-csv-data-link (str csv) name)))))))
 
 (defn upload-file
@@ -86,11 +91,14 @@
            load-listener (.addEventListener xhr "load" response-data-listener)
            form-data (js/FormData.)
            doc-key (-> :doc session/get keyword)
-           url-target "upload"
+           url-target "/upload"
            anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))
            w (transit/writer :json)
            data (transit/write w @*data*)]
-       (swap! *drop-classes* str " parsing-file")
+       (swap! *drop-classes* str " three-quarters-loader")
+       (reset! *submit-button* {:text "Processing File..."
+                                :class "disabled"
+                                :disabled true})
        (.open xhr "POST" url-target true)
        (.setRequestHeader xhr "x-csrf-token" anti-forgery-token)
        (.setRequestHeader xhr "accept" "application/transit+json")
@@ -117,15 +125,36 @@
   (.preventDefault event)
   (reset! *dragging* false))
 
+(defn round-to-2 "round to two decimals" [num]
+  (-> num (* 100) (->> (.round js/Math)) (/ 100)))
+
+(defn size-format [size]
+  (let [kb (->  (/ size 1024) round-to-2)
+        mb (-> (/ kb 1024) round-to-2)
+        threshold 0.85
+        label (cond
+                (> mb threshold) (str mb " mb")
+                (> kb threshold) (str kb " kb")
+                :default (str size " bytes"))]
+    label))
+
 (defn parse-file [file]
   (let [file-type (.-type file)
-        ;; file-size (.-size file)
-        ;; file-name (.-name file)
+        file-size (size-format (.-size file))
+        file-name (.-name file)
         allowed-types #{
                         "text/plain"
                         }]
     (if (allowed-types file-type)
-      (upload-file file)
+      (do
+                                        ;(reset! *submit-text* (str file-name "\n(" file-size ")" ))
+        (reset! *submit-button* {:text "Process File"
+                                 :class "enabled"
+                                 :disabled false})
+        (reset! *submit-text* [:div.submit-text
+                               [:span.filename file-name]
+                               [:span.filesize file-size]])
+        (reset! *file* file))
       (js/alert (str  "Sorry; you can't upload files of type " file-type)))))
 
 (defn file-handler [event]
@@ -139,6 +168,14 @@
     (if (> fcount 1)
       (js/alert "Please select only one file")
       (parse-file file))))
+
+(defn try-submit-file
+  "Try to process the file that has been added"
+  []
+  (let [file @*file*]
+    (if file
+      (upload-file file)
+      (js/alert "You must provide a file to process first"))))
 
 (defn drag-drop
   "Stop events and handle dropped file"
@@ -169,14 +206,14 @@
   [element-id]
   [:div.upload.col-md-3
    {:id "droppable"
-    :class @*drop-classes*
     :on-drag-over #(drag-hover %)
     :on-drag-leave #(drag-off %)
     :on-drop #(drag-drop %)
     :on-click #(.click (upload-input))
     }
    [:div.upload-text.text-center
-    "Drop or Click to Submit .txt"
+    {:class @*drop-classes*}
+    @*submit-text*
     [:div (@*up-error* :message)]]])
 
 (defn nav-link [uri title page collapsed?]
@@ -228,13 +265,14 @@
                       :id "regex"
                       :value (@*data* :regexp)
                       :on-change #(update-data :regexp "regex")}]]
-     ;; [:div.passes
-     ;;  [:span.label.label-info "Training Passes"]
-     ;;  [:input.passes {:type "text"
-     ;;                  :name "passes"
-     ;;                  :id "passes"
-     ;;                  :value (@*data* :passes)
-     ;;                  :on-change #(update-data :passes "passes" js/parseInt)}]]
+     [:div.passes
+      [:span.label.label-info "Training Passes"]
+      [:input.passes {:type "text"
+                      :name "passes"
+                      :id "passes"
+                      :value (@*data* :passes)
+                      :on-change #(update-data :passes "passes" js/parseInt)}]
+      [:span.text-info "Granularity/distinctiveness at the cost of processing time"]]
      [:div.keywords
       [:span.label.label-info "Number of Keywords"]
       [:input.passes {:type "text"
@@ -260,8 +298,13 @@
      [:div.doc-up
       [:div.file 
        (upload-prompt "doc-up")]]
-
-     [:div#result {:style {:clear "both"}} @*data-link*]]))
+     [:div.submit {:style {:clear "both"}}
+      [:button 
+       {:class (@*submit-button* :class)        
+        :disabled (@*submit-button* :disabled)
+        :on-click #(try-submit-file)}
+       (@*submit-button* :text)]]
+     [:div#result @*data-link*]]))
 
 (def pages
   {:home #'home-page

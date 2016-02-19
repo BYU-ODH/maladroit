@@ -133,13 +133,13 @@
 
 (defn get-model-topic-words
   "Returns [[instance-num [word-list]]] for each instance in the model"
-  [model instances]
-  (let [num-words 5
-        model-words (.getSortedWords model)
+  [model instances & {:keys [num-keywords]
+                      :or {num-keywords 5}}]
+  (let [ model-words (.getSortedWords model)
         data-alpha (.getDataAlphabet instances)]
     ;; for each topic,
     (for [topic-words model-words]
-      (into [] (for [w (take num-words topic-words)]
+      (into [] (for [w (take num-keywords topic-words)]
                  (.lookupObject data-alpha (.getID w)))))))
 
 (defn get-topic-dists
@@ -219,6 +219,7 @@
      ;; num-topics alphaSum beta
      (.addInstances instances)
      (.setOptimizeInterval 10) ;; TSA
+     (.setTopicDisplay 0 0) ;; TSA need to turn off the output to std out (will go faster)
      (.setRandomSeed 1)        ; TSA
      (.setBurninPeriod 200)    ; TSA
      (.setSymmetricAlpha true)  ; TSA
@@ -406,7 +407,7 @@
                             (add-strings the-instance-list string-vec))
         model (or model
                  (train-model num-topics num-threads num-iterations the-instance-list))
-        keywords-list (get-model-topic-words model instance-list)
+        keywords-list (get-model-topic-words model instance-list :num-keywords num-keywords)
         ;; keywords-list (into []
         ;;                     (for [n (range num-topics)]
         ;;                       (take num-keywords (get-topic-words-only model the-instance-list n))))

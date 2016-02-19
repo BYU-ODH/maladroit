@@ -70,12 +70,17 @@ div.upload {
   border: 5px dashed;
   border-color: #A7A9AC;
   display: table;
+  height: 150px;
+  width: 150px;
 }
 
 div.upload-text {
-  height: 120px;
   display: table-cell;
   vertical-align: middle;
+}
+
+div.upload-text span {
+  line-height: 1.5em;
 }
 
 div.upload.dragoon {
@@ -106,4 +111,51 @@ div#droppable:hover {
 
 .doc-up {
   margin-top: 30;
+}
+
+div.submit-text span {
+  display: block;
+}
+
+div.submit-text span.filename {
+  font-weight: bold;
+}
+
+div.submit-text span.filesize {
+  font-style: italic;
+}
+
+span.filesize:before {
+  content: "(";
+}
+
+span.filesize:after {
+  content: ")";
+}
+
+.three-quarters-loader.upload-text {
+  top: 31.5px;
+  left: 19.5px;
+  height: 75.0px;
+  width: 75.0px;
+  border-radius: 112.5px;
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
+
+button.enabled {
+  background-color: #336699;
+  font-weight: bold;
+  color: #E0EDF9;
+  border-color: #F9FCFE;
+}
+
+button.disabled {
+  background-color: #A7A9AC;
+  font-weight: bold;
+  color: #FFFFEE;
+  border-color: gray;
 }

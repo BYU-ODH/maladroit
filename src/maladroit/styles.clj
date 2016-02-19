@@ -1,5 +1,6 @@
 (ns maladroit.styles
   (:require [garden.def :refer [defstylesheet defstyles]]
+            [garden.selectors :as s]
             [garden.units :as u :refer [px]]
             [garden.color :as c :refer [hex->hsl hsl->hex]] ;:rename {hex->rgb hr, rgb->hex rh}]
             ))
@@ -25,6 +26,9 @@
    :offwhite "#FFFFEE"
    :lightestblue "#F9FCFE"
    :midblue "#628CB6"})
+
+(def upload-measure 150)
+
 (def ycolor-obj (into {} (for [[k v] ycolors] {k (hex->hsl v)}))) ;; Object version of ycolors
 ;; (def yretrieve-hex [key]
 ;;   "Get the hex number from the ycolor-obj"
@@ -82,12 +86,14 @@
   [:.file-list-entry {:margin [["1em" 0]]}]
   [:div.upload {:border "5px dashed"
                 :border-color (ycolors :gray)
-                :display "table"}]
-  [:div.upload-text {
-                     :height (px 120)
+                :display "table"
+                :height (px upload-measure)
+                :width (px upload-measure)}]
+  [:div.upload-text {                    
                      :display "table-cell"
                      :vertical-align "middle"
-                     }]
+                     }
+   [:span {:line-height "1.5em"}]]
   [:div.upload.dragoon {:border-color (ycolors :blue9)}]
   [:div#droppable:hover {:cursor "pointer"
                          :border-color (ycolors :midblue)} ]
@@ -96,5 +102,25 @@
   [:.data [:a {:display "block"}]]
   [:.label.label-info {:display "inline-block"
                        :width 150}]
-  [:.doc-up {:margin-top 30}])
-
+  [:.doc-up {:margin-top 30}]
+  [:div.submit-text
+   [:span {:display "block"}]
+   [:span.filename {:font-weight "bold"}]
+   [:span.filesize {:font-style "italic"}]]
+  [:span.filesize:before {:content "\"(\""}]
+  [:span.filesize:after {:content "\")\""}]
+  [:.three-quarters-loader.upload-text {:top (px (* 0.21 upload-measure))
+                                        :left (px (* 0.13 upload-measure))
+                                        :height (px (* 0.5 upload-measure))
+                                        :width (px (* 0.5 upload-measure))
+                                        :border-radius (px (* 0.75 upload-measure))
+                                        :display "block"}]
+  [:.hidden {:display "none"}]
+  [:button.enabled {:background-color (ycolors :blue6)
+                     :font-weight "bold"
+                    :color (ycolors :blue11)
+                    :border-color (ycolors :blue13)}]
+  [:button.disabled {:background-color (ycolors :gray)
+                     :font-weight "bold"
+                     :color (ycolors :offwhite)
+                     :border-color "gray"}])
