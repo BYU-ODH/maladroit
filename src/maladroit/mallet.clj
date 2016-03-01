@@ -415,12 +415,28 @@
     (map-indexed vector keywords-list)))
 
 (defn get-topic-name [s]
-  (let [dlen 20
-        slen (count s)]
+  (let [dlen 30
+        title (first (str/split s #"\n"))
+        slen (count title)]
   (cond
-    (= 0 (count s)) "Blank"
-    (< slen dlen) (subs s 0 slen)
-    :defaul (subs s 0 dlen))))
+    (= 0 (count title)) "Blank"
+    (< slen dlen) (subs title 0 slen)
+    :default title)))
+
+(defn- factor [no-of-decimal-places]
+    (.pow (BigInteger. "10") no-of-decimal-places))
+
+(defn truncate [value decimal-places]
+  (let [divide-and-multiply-by (factor decimal-places)]
+    (float (/ (int (* divide-and-multiply-by value)) divide-and-multiply-by))))
+
+(defn for-gephi
+  "Format output for Gephi"
+  [doc-topics]
+  (for [d doc-topics]
+    (let [title (first d)]
+      (for [[topic weight] (-> d rest first)]
+        [title topic (truncate weight 6) "undirected" title]))))
 
 (defn process-file
   ;; emulate: --output-topic-keys --output-doc-topics
@@ -449,9 +465,11 @@
                            :num-threads num-threads)
         _ (println "topic-keywords successful")
         dt (get-all-topics model instance-names)
+        gephi (for-gephi dt)
         ]
     {:topics-keys tk
-     :doc-topics dt}))
+     :doc-topics dt
+     :stacked gephi}))
 
 (defn flatten-for-tsv
   [data]
@@ -464,7 +482,18 @@
     (with-open [os bos
                 w (io/writer os)]
       (csv/write-csv w (flatten-for-tsv data) :separator \tab))
-    bos)) 
+    bos))
+
+(defn to-gephi-csv
+  "Outputs to a CSV input stream as received from to-gephi"
+  [data]
+  (let [bos (ByteArrayOutputStream.)]
+    (println "WORKING to-gephi-csv")
+    (with-open [os bos
+                w (io/writer os)]
+      (csv/write-csv w [["Source" "Target" "Weight" "Type" "Label"]]) ;; headers
+      (doseq [c data] (csv/write-csv w c))
+      bos)))
 
 (defn to-disk [tsv]
   (let [out-file "/home/torysa/temp/topickeys.csv"]

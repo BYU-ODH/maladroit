@@ -69,7 +69,7 @@
                              (do (println "dat is " (type t))
                                  (s/replace t "\t" \tab)
                                  ))))
-        doc-names ["keywords.csv" "topics.csv"]]
+        doc-names ["keywords.csv" "topics.csv" "gephi.csv"]]
     (reset! *submit-button* {:text "Process Again"
                              :class "enabled"
                              :disabled false})

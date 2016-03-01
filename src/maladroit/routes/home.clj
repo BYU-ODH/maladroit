@@ -35,13 +35,11 @@
                                         ;process-req (-> req :params :data decode-transit-string)
         data (-> req :params :data decode-transit-string) ;; AJAX
         {:keys [regexp passes num-keywords num-topics stopwords]} data
-        ;_ (println "passes is " passes)
         default-re #"(?m)^\* "
         re (try
              (re-pattern (str "(?m)" regexp))
              (catch Exception e (do (timbre/warn "Failed to convert regexp")
                                     default-re)))
-        ;_ (println "Regexp is " re)
         file-stream (io/input-stream tempfile)
         results (m/process-file :file tempfile
                                 :regexp re
@@ -50,7 +48,6 @@
                                 :num-topics num-topics
                                 :stopwords (parse-stopwords stopwords)
                                 )
-        ;_ (println "Stopwords is " stopwords " of type " (type stopwords) ". Parsed, that's " (parse-stopwords stopwords))
         topics-keys-results (-> results
                     :topics-keys
                     m/to-tsv
@@ -59,12 +56,18 @@
                            :doc-topics
                            m/to-tsv
                            str)
-        txt-results {:keys topics-keys-results
-                     :topics topics-results}]
-    ;(println "Topics results is " topics-results)
+        gephi-results (-> results
+                          :stacked
+                          m/to-gephi-csv
+                          str)
+        ;; txt-results {:keys topics-keys-results
+        ;;              :topics topics-results
+        ;;              :stacked gephi-results}
+        ]
     (make-file-download
      [[topics-keys-results]
-      [topics-results]]
+      [topics-results]
+      [gephi-results]]
      "results.csv"
      "application/transit+json")))
 (defroutes home-routes
