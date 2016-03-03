@@ -305,7 +305,9 @@
   (->> instance-names
        .size
        range
-       (map #(vector (get instance-names %) (get-all-topics-instance model %)))))
+       ;;(map-indexed vector (get-all-topics-instance model %))
+       (map #(vector (get instance-names %) (get-all-topics-instance model %)))
+))
 
 (defn get-top-topics
   "Returns a sequence of pairs of the instance ID and the top
@@ -436,7 +438,14 @@
   (for [d doc-topics]
     (let [title (first d)]
       (for [[topic weight] (-> d rest first)]
-        [title topic (truncate weight 6) "undirected" title]))))
+        [title topic weight "undirected" title]))))
+;; (defn for-gephi
+;;   "Format output for Gephi"
+;;   [doc-topics]
+;;   (for [[num topics] doc-topics]
+;;     (for [[topic weight] (-> d rest first)]
+;;       [title topic (truncate weight 6) "undirected" title])))
+
 
 (defn process-file
   ;; emulate: --output-topic-keys --output-doc-topics
@@ -451,7 +460,9 @@
            stopwords (into-array String [])}}]
   (let [overall-instance-list (make-pipe-list stopwords)
         topics-strings (-> file (easy-file-split regexp))
-        instance-names (into [] (for [s topics-strings] (get-topic-name s)))
+        instance-names (into [] (for [n (-> topics-strings count range)]
+                                  (str "Segment_" n)))
+        ;instance-names (into [] (for [s topics-strings] (get-topic-name s)))
         topics-strings-array (into-array topics-strings)
         _populate-list (add-strings overall-instance-list topics-strings-array)
         _ (println "Strings added\n\n")
@@ -488,7 +499,6 @@
   "Outputs to a CSV input stream as received from to-gephi"
   [data]
   (let [bos (ByteArrayOutputStream.)]
-    (println "WORKING to-gephi-csv")
     (with-open [os bos
                 w (io/writer os)]
       (csv/write-csv w [["Source" "Target" "Weight" "Type" "Label"]]) ;; headers
