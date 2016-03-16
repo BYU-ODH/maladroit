@@ -12,7 +12,7 @@
             [maladroit.utils :as ut])
   (:import goog.History))
 (def *file* (atom nil))
-(def *data* (atom {:regexp "^\\*"
+(def *data* (atom {:regexp "^\\* "
                    :passes 300
                    :num-topics 8
                    :num-keywords 10

@@ -294,20 +294,33 @@
         [_ mx] (apply max-key second probs)]
     (filterv #(= (second %) mx) probs)))
 
+;; (defn get-all-topics-instance
+;;   [model instance-n]
+;;   (mapv vector
+;;         (range)
+;;         (.getTopicProbabilities model instance-n)))
+(defn un-science [num]
+                                        ;(println (count num))
+                                        ;[(first num) (str (bigdec (second num)))]
+  ;(println "Doc Topic Probability is: (out of )" (count num) (first num) (second  num))
+  (mapv #(format "%.8f" %) num)
+  ;num
+  ;[[w1] [w2]]
+  ;[(first num) ]
+  )
+
 (defn get-all-topics-instance
   [model instance-n]
   (mapv vector
         (range)
-        (.getTopicProbabilities model instance-n)))
+        (un-science (.getTopicProbabilities model instance-n))))
 
 (defn get-all-topics
   [model instance-names]
   (->> instance-names
        .size
        range
-       ;;(map-indexed vector (get-all-topics-instance model %))
-       (map #(vector (get instance-names %) (get-all-topics-instance model %)))
-))
+       (map #(vector (get instance-names %) (get-all-topics-instance model %)))))
 
 (defn get-top-topics
   "Returns a sequence of pairs of the instance ID and the top
@@ -460,8 +473,9 @@
            stopwords (into-array String [])}}]
   (let [overall-instance-list (make-pipe-list stopwords)
         topics-strings (-> file (easy-file-split regexp))
-        instance-names (into [] (for [n (-> topics-strings count range)]
-                                  (str "Segment_" n)))
+        instance-names (into [] (rest ;; skip the first one
+                                 (for [n (-> topics-strings count range)]
+                                   (str "Segment_" n))))
         ;instance-names (into [] (for [s topics-strings] (get-topic-name s)))
         topics-strings-array (into-array topics-strings)
         _populate-list (add-strings overall-instance-list topics-strings-array)
