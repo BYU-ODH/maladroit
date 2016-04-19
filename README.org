@@ -2,14 +2,14 @@
 A simple web app that takes a text file upload, splits it by your own regexp, and uses mallet to perform topic analysis on it. At present, does so completely statelessly (nothing is saved anywhere). 
 
 ** Prerequisites
-For development you only need [[https://github.com/technomancy/leiningen][Leiningen]] installed. Everything else will be downloaded automatically. 
+For development you only need [[https://github.com/technomancy/leiningen][Leiningen]] installed (plus Java). Everything else will be downloaded automatically. 
 
 ** Running
 To start a web server for the app, execute =lein run=. You can connect your REPL on port 7000, and your browser on port 3000. To start front-end development, follow up with =lein figwheel= and watch your changes appear in real time without browser refresh. 
 
 ** Deployment
 *** As a jar
-Produce a .jar with =lein uberjar= and run with =java -jar target/maladroit.jar=, then route incoming traffic to the appropriate port. You'll want to  You may need to run =lein clean= prior to =lein uberjar=. For production you'll want some kind of upstart, systemd, other boot process to run the =java -jar= command. 
+Produce a .jar with =lein uberjar= and run with =java -jar target/maladroit.jar=, then route incoming traffic to the appropriate port. You may need to run =lein clean= prior to =lein uberjar=. For production you'll want some kind of upstart, systemd, other boot process to run the =java -jar= command. 
 *** As a war
 Even better, if you have a [[https://docs.jboss.org/author/display/WFLY10/Documentation][Wildfly]] server available, just do =lein clean; lein uberwar=, and then upload =target/maladroit.war= to the appropriate wildfly directory on your server. Wildfly will keep it running and tuned, and will automatically restart when a changed version is swapped in. 
 
