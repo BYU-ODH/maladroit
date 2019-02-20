@@ -28,11 +28,8 @@
 
 (defn upload-doc [req]
   (timbre/info "Request is: >>>\n" req)
-  (let [ ;params (-> req :params)
-        file-data (-> req :params :file)
+  (let [file-data (-> req :params :file)
         {:keys [filename content-type tempfile]} file-data        ;; AJAX version
-                                        ;file-data (:file params) ;; FORM version
-                                        ;process-req (-> req :params :data decode-transit-string)
         data (-> req :params :data decode-transit-string) ;; AJAX
         {:keys [regexp passes num-keywords num-topics stopwords]} data
         default-re #"(?m)^\* "
@@ -59,11 +56,7 @@
         gephi-results (-> results
                           :stacked
                           m/to-gephi-csv
-                          str)
-        ;; txt-results {:keys topics-keys-results
-        ;;              :topics topics-results
-        ;;              :stacked gephi-results}
-        ]
+                          str)]
     (make-file-download
      [[topics-keys-results]
       [topics-results]

@@ -38,7 +38,7 @@
   ([] (easy-file-split "./resources/docs/quad.org" #"(?m)^\* "))
   ([file regexp]
    (let [file-string (slurp file)]
-     (str/split file-string regexp))))
+     (rest (str/split file-string regexp)))))
 
 
 (defn make-pipe-list
@@ -472,7 +472,7 @@
            num-keywords 8
            stopwords (into-array String [])}}]
   (let [overall-instance-list (make-pipe-list stopwords)
-        topics-strings (-> file (easy-file-split regexp))
+        topics-strings (easy-file-split file regexp)
         instance-names (into [] (rest ;; skip the first one
                                  (for [n (-> topics-strings count range)]
                                    (str "Segment_" n))))
