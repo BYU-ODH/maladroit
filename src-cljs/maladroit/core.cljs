@@ -11,20 +11,20 @@
             [cognitect.transit :as transit]
             [maladroit.utils :as ut])
   (:import goog.History))
-(def *file* (atom nil))
-(def *data* (atom {:regexp "^\\* "
+(def FILE (atom nil))
+(def DATA (atom {:regexp "^\\* "
                    :passes 300
                    :num-topics 8
                    :num-keywords 10
                    :stopwords ""}))
-(def *submit-text* (atom [:div.submit-text "Drop or click to select .txt file"]))
-(def *data-link* (atom [:div.data ""]))
-(def *dragging* (atom false))
-(def *drop-classes* (atom ""))
-(def *up-error* (atom {:page ()
+(def SUBMIT-TEXT (atom [:div.submit-text "Drop or click to select .txt file"]))
+(def DATA-LINK (atom [:div.data ""]))
+(def DRAGGING (atom false))
+(def DROP-CLASSES (atom ""))
+(def UP-ERROR (atom {:page ()
                        :default-message [:span.label.label-warning ".docx files only"]
                        :message ()}))
-(def *submit-button* (atom {:text "Upload File First"
+(def SUBMIT-BUTTON (atom {:text "Upload File First"
                             :class "disabled"
                             :disabled true}))
 (defn space-split [string]
@@ -36,8 +36,8 @@
    (let [value (->  (.getElementById js/document id) .-value)]
      (if conversion-fun
        (when-let [casted (conversion-fun value)]
-         (swap! *data* assoc key casted))
-       (swap! *data* assoc key value)))))
+         (swap! DATA assoc key casted))
+       (swap! DATA assoc key value)))))
 
 ;;;;;;;;;;;;;;;;;
 ;; FILE UPLOAD ;;
@@ -70,11 +70,11 @@
                                  (s/replace t "\t" \tab)
                                  ))))
         doc-names ["keywords.csv" "topics.csv" "gephi.csv"]]
-    (reset! *submit-button* {:text "Process Again"
+    (reset! SUBMIT-BUTTON {:text "Process Again"
                              :class "enabled"
                              :disabled false})
-    (reset! *drop-classes* "")
-    (reset! *data-link* (into [:div.data] (for [[csv name] (map vector transit-data doc-names)] (do (println "name: " name) (generate-csv-data-link (str csv) name)))))))
+    (reset! DROP-CLASSES "")
+    (reset! DATA-LINK (into [:div.data] (for [[csv name] (map vector transit-data doc-names)] (do (println "name: " name) (generate-csv-data-link (str csv) name)))))))
 
 (defn upload-file
   "Upload the given file to the server"
@@ -94,9 +94,9 @@
            url-target "upload"
            anti-forgery-token (.-value (.getElementById js/document "__anti-forgery-token"))
            w (transit/writer :json)
-           data (transit/write w @*data*)]
-       (swap! *drop-classes* str " three-quarters-loader")
-       (reset! *submit-button* {:text "Processing File..."
+           data (transit/write w @DATA)]
+       (swap! DROP-CLASSES str " three-quarters-loader")
+       (reset! SUBMIT-BUTTON {:text "Processing File..."
                                 :class "disabled"
                                 :disabled true})
        (.open xhr "POST" url-target true)
@@ -114,7 +114,7 @@
   (dom/log "Dragged over")
   (.stopPropagation event)
   (.preventDefault event)
-  (reset! *dragging* true))
+  (reset! DRAGGING true))
 
 (defn drag-off
   "When an item is dragged off the element, 
@@ -123,7 +123,7 @@
   (dom/log "Dragged off")
   (.stopPropagation event)
   (.preventDefault event)
-  (reset! *dragging* false))
+  (reset! DRAGGING false))
 
 (defn round-to-2 "round to two decimals" [num]
   (-> num (* 100) (->> (.round js/Math)) (/ 100)))
@@ -147,14 +147,14 @@
                         }]
     (if (allowed-types file-type)
       (do
-                                        ;(reset! *submit-text* (str file-name "\n(" file-size ")" ))
-        (reset! *submit-button* {:text "Process File"
+                                        ;(reset! SUBMIT-TEXT (str file-name "\n(" file-size ")" ))
+        (reset! SUBMIT-BUTTON {:text "Process File"
                                  :class "enabled"
                                  :disabled false})
-        (reset! *submit-text* [:div.submit-text
+        (reset! SUBMIT-TEXT [:div.submit-text
                                [:span.filename file-name]
                                [:span.filesize file-size]])
-        (reset! *file* file))
+        (reset! FILE file))
       (js/alert (str  "Sorry; you can't upload files of type " file-type)))))
 
 (defn file-handler [event]
@@ -172,7 +172,7 @@
 (defn try-submit-file
   "Try to process the file that has been added"
   []
-  (let [file @*file*]
+  (let [file @FILE]
     (if file
       (upload-file file)
       (js/alert "You must provide a file to process first"))))
@@ -182,13 +182,13 @@
   [event]
   (.stopPropagation event)
   (.preventDefault event)
-  (reset! *dragging* false)
+  (reset! DRAGGING false)
   (file-handler event))
 
 (defn droppable-class
   "Render the element appropriately when hovered, if it's a doc page"
   []
-  (if @*dragging*
+  (if @DRAGGING
     "dragoon"
     ""))
 
@@ -212,9 +212,9 @@
     :on-click #(.click (upload-input))
     }
    [:div.upload-text.text-center
-    {:class @*drop-classes*}
-    @*submit-text*
-    [:div (@*up-error* :message)]]])
+    {:class @DROP-CLASSES}
+    @SUBMIT-TEXT
+    [:div (@UP-ERROR :message)]]])
 
 (defn nav-link [uri title page collapsed?]
   [:li {:class (when (= page (session/get :page)) "active")}
@@ -263,14 +263,14 @@
       [:input.regexp {:type "text"
                       :name "regex"
                       :id "regex"
-                      :value (@*data* :regexp)
+                      :value (@DATA :regexp)
                       :on-change #(update-data :regexp "regex")}]]
      [:div.passes
       [:span.label.label-info "Training Passes"]
       [:input.passes {:type "text"
                       :name "passes"
                       :id "passes"
-                      :value (@*data* :passes)
+                      :value (@DATA :passes)
                       :on-change #(update-data :passes "passes" js/parseInt)}]
       [:span.text-info "Granularity/distinctiveness at the cost of processing time"]]
      [:div.keywords
@@ -279,32 +279,32 @@
                       :name "keywords"
                       :id "keywords"
                       :on-change #(update-data :num-keywords "keywords" js/parseInt)
-                      :value (@*data* :num-keywords)}]]
+                      :value (@DATA :num-keywords)}]]
      [:div.topics
       [:span.label.label-info "Number of Topics"]
       [:input.passes {:type "text"
                       :name "topics"
                       :id "topics"
                       :on-change #(update-data :num-topics "topics" js/parseInt)
-                      :value (@*data* :num-topics)}]]
+                      :value (@DATA :num-topics)}]]
      [:div.stopwords
       [:span.label.label-info "Extra Stopwords"]
       [:input.passes {:type "text"
                       :name "stopwords"
                       :id "stopwords"
                       :on-change #(update-data :stopwords "stopwords")
-                      :value (@*data* :stopwords)}]
+                      :value (@DATA :stopwords)}]
       [:span.text-info "Space separated"]]
      [:div.doc-up
       [:div.file 
        (upload-prompt "doc-up")]]
      [:div.submit {:style {:clear "both"}}
       [:button 
-       {:class (@*submit-button* :class)        
-        :disabled (@*submit-button* :disabled)
+       {:class (@SUBMIT-BUTTON :class)        
+        :disabled (@SUBMIT-BUTTON :disabled)
         :on-click #(try-submit-file)}
-       (@*submit-button* :text)]]
-     [:div#result @*data-link*]]))
+       (@SUBMIT-BUTTON :text)]]
+     [:div#result @DATA-LINK]]))
 
 (def pages
   {:home #'home-page
@@ -340,7 +340,7 @@
   (GET (str js/context "docs") {:handler #(session/put! :docs %)}))
 
 (defn mount-components []
-  (reagent/render [#'navbar] (.getElementById js/document "navbar"))
+  ;(reagent/render [#'navbar] (.getElementById js/document "navbar"))
   (reagent/render [#'page] (.getElementById js/document "app")))
 
 (defn init! []

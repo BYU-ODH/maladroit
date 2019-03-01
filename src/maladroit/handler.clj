@@ -7,8 +7,7 @@
             [compojure.route :as route]
             [config.core :refer [env]]
             [maladroit.config :refer [defaults]]
-            [mount.core :as mount]
-            [luminus-log4j.core :as log-adapter]))
+            [mount.core :as mount]))
 
 (defn init
   "init will be called once when
@@ -16,7 +15,6 @@
    an app server such as Tomcat
    put any initialization code here"
   []
-  (log-adapter/init env)
   (doseq [component (:started (mount/start))]
     (log/info component "started"))
   ((:init defaults)))
