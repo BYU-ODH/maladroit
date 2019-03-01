@@ -5,7 +5,7 @@
             [clojure.data.csv :as csv]
             [clojure.string :as str]
             [ring.util.io :refer [piped-input-stream]])
-  (:import [cc.mallet.util.*]
+  (:import ;[cc.mallet.util.*]
            [cc.mallet.types InstanceList]
            [cc.mallet.pipe
             Input2CharSequence TokenSequenceLowercase
