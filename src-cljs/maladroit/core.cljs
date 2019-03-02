@@ -13,20 +13,20 @@
   (:import goog.History))
 (def FILE (atom nil))
 (def DATA (atom {:regexp "^\\* "
-                   :passes 300
-                   :num-topics 8
-                   :num-keywords 10
-                   :stopwords ""}))
+                 :passes 300
+                 :num-topics 8
+                 :num-keywords 10
+                 :stopwords ""}))
 (def SUBMIT-TEXT (atom [:div.submit-text "Drop or click to select .txt file"]))
 (def DATA-LINK (atom [:div.data ""]))
 (def DRAGGING (atom false))
 (def DROP-CLASSES (atom ""))
 (def UP-ERROR (atom {:page ()
-                       :default-message [:span.label.label-warning ".docx files only"]
-                       :message ()}))
+                     :default-message [:span.label.label-warning ".docx files only"]
+                     :message ()}))
 (def SUBMIT-BUTTON (atom {:text "Upload File First"
-                            :class "disabled"
-                            :disabled true}))
+                          :class "disabled"
+                          :disabled true}))
 (defn space-split [string]
   (s/split string \space))
 
@@ -71,8 +71,8 @@
                                  ))))
         doc-names ["keywords.csv" "topics.csv" "gephi.csv"]]
     (reset! SUBMIT-BUTTON {:text "Process Again"
-                             :class "enabled"
-                             :disabled false})
+                           :class "enabled"
+                           :disabled false})
     (reset! DROP-CLASSES "")
     (reset! DATA-LINK (into [:div.data] (for [[csv name] (map vector transit-data doc-names)] (do (println "name: " name) (generate-csv-data-link (str csv) name)))))))
 
@@ -97,12 +97,12 @@
            data (transit/write w @DATA)]
        (swap! DROP-CLASSES str " three-quarters-loader")
        (reset! SUBMIT-BUTTON {:text "Processing File..."
-                                :class "disabled"
-                                :disabled true})
+                              :class "disabled"
+                              :disabled true})
        (.open xhr "POST" url-target true)
        (.setRequestHeader xhr "x-csrf-token" anti-forgery-token)
        (.setRequestHeader xhr "accept" "application/transit+json")
-       ;(.setRequestHeader xhr "accept" "text/csv")
+                                        ;(.setRequestHeader xhr "accept" "text/csv")
        (.append form-data "file" file)
        (.append form-data "data" data)
        (.send xhr form-data))))) ;; test
@@ -149,11 +149,11 @@
       (do
                                         ;(reset! SUBMIT-TEXT (str file-name "\n(" file-size ")" ))
         (reset! SUBMIT-BUTTON {:text "Process File"
-                                 :class "enabled"
-                                 :disabled false})
+                               :class "enabled"
+                               :disabled false})
         (reset! SUBMIT-TEXT [:div.submit-text
-                               [:span.filename file-name]
-                               [:span.filesize file-size]])
+                             [:span.filename file-name]
+                             [:span.filesize file-size]])
         (reset! FILE file))
       (js/alert (str  "Sorry; you can't upload files of type " file-type)))))
 
@@ -243,7 +243,7 @@
          (when-not @collapsed? {:class "in"})
          [:ul.nav.navbar-nav
           [nav-link "#/" "Home" :home collapsed?]
-          ;[nav-link "#/about" "About" :about collapsed?]
+                                        ;[nav-link "#/about" "About" :about collapsed?]
           ]]]])))
 
 (defn about-page []
@@ -328,11 +328,11 @@
 ;; must be called after routes have been defined
 (defn hook-browser-navigation! []
   (doto (History.)
-        (events/listen
-          HistoryEventType/NAVIGATE
-          (fn [event]
-              (secretary/dispatch! (.-token event))))
-        (.setEnabled true)))
+    (events/listen
+     HistoryEventType/NAVIGATE
+     (fn [event]
+       (secretary/dispatch! (.-token event))))
+    (.setEnabled true)))
 
 ;; -------------------------
 ;; Initialize app
@@ -340,10 +340,10 @@
   (GET (str js/context "docs") {:handler #(session/put! :docs %)}))
 
 (defn mount-components []
-  ;(reagent/render [#'navbar] (.getElementById js/document "navbar"))
+                                        ;(reagent/render [#'navbar] (.getElementById js/document "navbar"))
   (reagent/render [#'page] (.getElementById js/document "app")))
 
 (defn init! []
-  ;(fetch-docs!)
+                                        ;(fetch-docs!)
   (hook-browser-navigation!)
   (mount-components))

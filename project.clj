@@ -3,7 +3,7 @@
   :description "Maladroit is a mallet interface for processing uploaded books"
   :url "example.com"
 
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.9.0"]
                  [selmer "1.12.8"]
                  [hiccup "1.0.5"]
                  [markdown-clj "1.0.7"]
@@ -21,7 +21,7 @@
                  [ring/ring-defaults "0.3.2"]
                  [ring "1.7.1" :exclusions [ring/ring-jetty-adapter]]
                  [mount "0.1.16"]
-                 [luminus-nrepl "0.1.6"]
+                 ;[luminus-nrepl "0.1.6"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"]
                  [reagent "0.8.1"]
                  [reagent-forms "0.5.43"]
@@ -45,16 +45,10 @@
   :main maladroit.core
 
   :plugins [[lein-environ "1.0.1"]
-            ;[lein-uberwar "0.1.0"]
             [lein-immutant "2.1.0"]
-            ;[lein-uberwar "0.2.0"]
             [lein-cljsbuild "1.1.1"]
             [lein-garden "0.2.6"]]
   :immutant {:war {:name "maladroit%t"}}
-  ;; :uberwar {:handler maladroit.handler/app
-  ;;           :init maladroit.handler/init
-  ;;           :destroy maladroit.handler/destroy
-  ;;           :name "maladroit.war"}
   :garden {:builds [{:id "maladroit"
                      :source-paths ["src/styles"]
                      :stylesheet maladroit.styles/maladroit
@@ -74,10 +68,10 @@
   :profiles
   {:uberjar {:omit-source true
              :env {:production true}
-              :prep-tasks ["compile" ["cljsbuild" "once"]]
+              :prep-tasks ["compile" ["cljsbuild" "once" "min"]]
               :cljsbuild
               {:builds
-               {:app
+               {:min
                 {:source-paths ["env/prod/cljs"]
                  :compiler
                  {:optimizations :advanced
@@ -93,10 +87,7 @@
    :project/dev  {:dependencies [[prone "1.6.1"]
                                  [ring/ring-mock "0.3.2"]
                                  [ring/ring-devel "1.7.1"]
-                                 [pjstadig/humane-test-output "0.9.0"]
-                                 [lein-figwheel "0.5.18"]
-                                 [com.cemerick/piggieback "0.2.2"]]
-                  :plugins [[lein-figwheel "0.5.0-4"] [org.clojure/clojurescript "1.7.228"]]
+                                 [pjstadig/humane-test-output "0.9.0"]]
                   :cljsbuild
                    {:builds
                     {:app
