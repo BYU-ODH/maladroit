@@ -28,16 +28,17 @@
 
 (defn upload-doc [req]
   (timbre/info "Request is: >>>\n" req)
+  #_(def req {:params {:file {:filename "test.txt", :content-type "text/plain" :tempfile "/home/torysa/tmp/test.txt"}, :data ["^ ","~:regexp","~^\\* ","~:passes",300,"~:num-topics",8,"~:num-keywords",10,"~:stopwords",""]}})
+
   (let [file-data (-> req :params :file)
         {:keys [filename content-type tempfile]} file-data        ;; AJAX version
-        data (-> req :params :data decode-transit-string) ;; AJAX
+        data (-> req :params :data decode-transit-string) ;; AJAX (def string (->> req :params :data (apply str)))
         {:keys [regexp passes num-keywords num-topics stopwords]} data
-        default-re #"(?m)^\* "
+        default-re #"(?m)^\* " ;(def regexp default-re)
         re (try
              (re-pattern (str "(?m)" regexp))
              (catch Exception e (do (timbre/warn "Failed to convert regexp")
                                     default-re)))
-        file-stream (io/input-stream tempfile)
         results (m/process-file :file tempfile
                                 :regexp re
                                 :num-iterations passes

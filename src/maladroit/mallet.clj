@@ -4,6 +4,7 @@
             [clojure.java.io :as io]
             [clojure.data.csv :as csv]
             [clojure.string :as str]
+            [taoensso.timbre :as log]
             [ring.util.io :refer [piped-input-stream]])
   (:import [cc.mallet.util.*]
            [cc.mallet.types InstanceList]
@@ -60,6 +61,8 @@
 
 (defn add-strings
   [instance-list data-array]
+  (log/info "\n\n>>> Adding strings:" {:instance-list instance-list
+             :data-array data-array})
   (.addThruPipe
    instance-list
    (StringArrayIterator. data-array)))
@@ -422,11 +425,7 @@
                             (add-strings the-instance-list string-vec))
         model (or model
                  (train-model num-topics num-threads num-iterations the-instance-list))
-        keywords-list (get-model-topic-words model instance-list :num-keywords num-keywords)
-        ;; keywords-list (into []
-        ;;                     (for [n (range num-topics)]
-        ;;                       (take num-keywords (get-topic-words-only model the-instance-list n))))
-        ]
+        keywords-list (get-model-topic-words model instance-list :num-keywords num-keywords)]
     (map-indexed vector keywords-list)))
 
 (defn get-topic-name [s]
@@ -452,13 +451,6 @@
     (let [title (first d)]
       (for [[topic weight] (-> d rest first)]
         [title topic weight "undirected" title]))))
-;; (defn for-gephi
-;;   "Format output for Gephi"
-;;   [doc-topics]
-;;   (for [[num topics] doc-topics]
-;;     (for [[topic weight] (-> d rest first)]
-;;       [title topic (truncate weight 6) "undirected" title])))
-
 
 (defn process-file
   ;; emulate: --output-topic-keys --output-doc-topics
@@ -471,13 +463,14 @@
            num-threads 4
            num-keywords 8
            stopwords (into-array String [])}}]
+  (log/info "\n\nProcessing file...")
   (let [overall-instance-list (make-pipe-list stopwords)
         topics-strings (easy-file-split file regexp)
         instance-names (into [] (rest ;; skip the first one
                                  (for [n (-> topics-strings count range)]
                                    (str "Segment_" n))))
         ;instance-names (into [] (for [s topics-strings] (get-topic-name s)))
-        topics-strings-array (into-array topics-strings)
+        topics-strings-array (into-array String topics-strings)
         _populate-list (add-strings overall-instance-list topics-strings-array)
         _ (println "Strings added\n\n")
         model (train-model num-topics num-threads num-iterations overall-instance-list)
